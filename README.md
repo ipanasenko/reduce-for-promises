@@ -1,1 +1,1 @@
-# promise-reduce
+# reduce-for-promises

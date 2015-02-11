@@ -1,0 +1,30 @@
+{
+  "name": "reduce-for-promises",
+  "version": "1.0.0",
+  "description": "Reduce function for array of promises",
+  "main": "reduce.js",
+  "scripts": {
+    "test": "jasmine-node test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://hottdogg@github.com/hottdogg/promise-reduce.git"
+  },
+  "keywords": [
+    "promise",
+    "reduce"
+  ],
+  "author": "Ilya Panasenko",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hottdogg/promise-reduce/issues"
+  },
+  "homepage": "https://github.com/hottdogg/promise-reduce",
+  "devDependencies": {
+    "bluebird": "^2.9.8",
+    "jasmine-core": "^2.2.0"
+  },
+  "dependencies": {
+    "native-or-bluebird": "^1.1.2"
+  }
+}
