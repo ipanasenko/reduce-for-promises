@@ -1,6 +1,6 @@
 {
   "name": "reduce-for-promises",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Reduce function for array of promises",
   "main": "reduce.js",
   "scripts": {
