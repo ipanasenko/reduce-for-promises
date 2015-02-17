@@ -1,25 +1,39 @@
 var Promise = require('native-or-bluebird');
 
-function reduce(arr, callback, accumulator) {
-    var currentPromise = arr.shift();
+module.exports = (function () {
+	var i = 0,
+			resetI = function (result) {
+				i = 0;
+				return result;
+			},
+			resetIFail = function (reason) {
+				resetI();
+				return Promise.reject(reason);
+			},
+			increaseI = function () {
+				i += 1;
+			};
 
-    if (!currentPromise) {
-        return Promise.resolve(accumulator);
-    }
+	return function reduce(arr, callback, accumulator) {
+		var currentPromise = arr.shift();
+		if (!currentPromise) {
+			return Promise.resolve(accumulator).then(resetI);
+		}
 
-    var callbackResult = callback(accumulator, currentPromise),
-        thenFunction = function (accumulator) {
-            return reduce(arr, callback, accumulator);
-        };
+		var callbackResult = callback(accumulator, currentPromise, i),
+				thenFunction = function (accumulator) {
+					return reduce(arr, callback, accumulator);
+				};
 
-    if (callbackResult.then) {
-        return callbackResult.then(thenFunction);
-    }
+		increaseI();
 
-    if (callbackResult) {
-        return Promise.resolve(callbackResult).then(thenFunction);
-    }
-    return Promise.reject(callbackResult);
-}
+		if (callbackResult && callbackResult.then) {
+			return callbackResult.then(thenFunction, resetIFail);
+		}
 
-module.exports = reduce;
+		if (callbackResult) {
+			return Promise.resolve(callbackResult).then(thenFunction, resetIFail);
+		}
+		return Promise.reject(callbackResult).then(resetI);
+	};
+}());

@@ -13,7 +13,7 @@ var reduce = require('reduce-for-promises');
 # Example
 callback function will iterate to next item only after previous item's promise is resolved
 ```javascript
-reduce([1, 2, 3, 4], function (acc, item) {
+reduce([1, 2, 3, 4], function (acc, item, i) {
 	return new Promise(function (resolve) {
 		setTimeout(function () {
 			resolve(acc + item);
