@@ -1,6 +1,6 @@
 {
   "name": "reduce-for-promises",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Reduce function for array of promises",
   "main": "reduce.js",
   "scripts": {
@@ -21,8 +21,7 @@
   },
   "homepage": "https://github.com/ipanasenko/reduce-for-promises",
   "devDependencies": {
-    "bluebird": "^2.9.8",
     "jasmine-core": "^2.2.0",
-    "native-or-bluebird": "^1.1.2"
+    "jasmine-node": "^1.14.5"
   }
 }

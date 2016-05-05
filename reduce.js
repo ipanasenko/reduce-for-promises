@@ -1,78 +1,65 @@
-var Promise = require('native-or-bluebird');
+function handleResult(handleFn) {
+  return function (result) {
+    handleFn(result);
+  };
+}
 
-module.exports = (function () {
-	var i = 0,
-			queueSize, currentQueue, accumulator;
+function promisify(value) {
+  if (value.then) {
+    return value;
+  }
 
-	function handle(fn) {
-		return function (result) {
-			i = 0;
-			currentQueue = undefined;
-			fn(result);
-		}
-	}
+  return Promise.resolve(value);
+}
 
-	function increaseI(diff) {
-		i += diff || 1;
-	}
 
-	function isPromise(promise) {
-		return promise instanceof Promise;
-	}
+module.exports = function reduce(collection, callback, accumulator, maxQueueSize, currentQueue, nextItemIndex) {
 
-	function filterQueue() {
-		currentQueue = currentQueue.filter(function (item) {
-			if (isPromise(item) && item.isFulfilled()) {
-				return false;
-			}
-			return true;
-		});
-	}
+  maxQueueSize = maxQueueSize || 1;
+  currentQueue = currentQueue || [];
+  nextItemIndex = nextItemIndex || 0;
 
-	function toPromise(item) {
-		if (item && item.then) {
-			// do nothing
-		} else if (item) {
-			item = Promise.resolve(item);
-		} else {
-			item = Promise.reject(item);
-		}
-		return item;
-	}
+  return new Promise(function (resolve, reject) {
 
-	return function reduce(arr, callback, _accumulator, _queueSize) {
-		if (typeof _accumulator !== 'undefined') {
-			accumulator = _accumulator
-		}
-		queueSize = _queueSize || queueSize || 1;
+    var lastCollectionIndex = collection.length - 1;
 
-		return new Promise(function (resolve, reject) {
-			if (currentQueue && currentQueue.length === 0 && arr.length === 0) {
-				// all is ready
-				resolve(accumulator);
-				return;
-			}
+    // already iterated over all items in collection
+    if (nextItemIndex > lastCollectionIndex && currentQueue.length === 0) {
+      resolve(accumulator);
+      return;
+    }
 
-			if (!currentQueue) {
-				// no current queue - create it
-				currentQueue = [];
-			}
+    var availableSlots = maxQueueSize - currentQueue.length;
+    var itemsToAddToQueue = collection.slice(nextItemIndex, nextItemIndex + availableSlots);
 
-			// add new items to queue
-			if (arr.length) {
-				var newItemsCount = queueSize - currentQueue.length,
-						newItems = arr.splice(0, newItemsCount);
-				Array.prototype.push.apply(currentQueue, newItems.map(function (item) {
-					var callbackResult = callback(accumulator, item, i);
-					increaseI();
-					return toPromise(callbackResult);
-				}));
-			}
+    currentQueue = currentQueue.concat(
+      itemsToAddToQueue.map(function (item, i) {
+        var index = i + nextItemIndex;
+        var itemPromise = promisify(callback(accumulator, item, index, collection))
+          .then(function (result) {
+            return {
+              item: item,
+              value: result
+            };
+          });
 
-			Promise.race(currentQueue).then(function (accumulator) {
-				filterQueue();
-				return reduce(arr, callback, accumulator, queueSize);
-			}, handle(reject)).then(handle(resolve), handle(reject));
-		});
-	};
-}());
+        itemPromise.item = item;
+
+        return itemPromise;
+      })
+    );
+
+    Promise.race(currentQueue)
+      .then(function (result) {
+        // remove resolved item from queue
+        currentQueue = currentQueue.filter(function (itemPromise) {
+          return itemPromise.item !== result.item;
+        });
+
+        return reduce(collection, callback, result.value, maxQueueSize, currentQueue, nextItemIndex + itemsToAddToQueue.length);
+      })
+      .then(handleResult(resolve))
+      .catch(handleResult(reject));
+  });
+
+};
