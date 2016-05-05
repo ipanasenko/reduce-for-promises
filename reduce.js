@@ -49,6 +49,11 @@ module.exports = function reduce(collection, callback, accumulator, maxQueueSize
       })
     );
 
+    if (currentQueue.length === 0) {
+      resolve(accumulator);
+      return;
+    }
+
     Promise.race(currentQueue)
       .then(function (result) {
         // remove resolved item from queue
